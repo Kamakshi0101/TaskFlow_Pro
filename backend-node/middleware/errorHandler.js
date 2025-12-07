@@ -7,10 +7,14 @@ import { STATUS_CODES } from "../constants/index.js";
  */
 export const globalErrorHandler = (err, req, res, next) => {
   // Log error details in development
+  console.error("❌ Error caught in globalErrorHandler:");
+  console.error("Error type:", typeof err);
+  console.error("Error:", err);
+  console.error("Message:", err?.message);
+  console.error("Stack:", err?.stack);
+
   if (process.env.NODE_ENV === "development") {
-    console.error("❌ Error Details:");
-    console.error("Message:", err.message);
-    console.error("Stack:", err.stack);
+    console.error("Full error object:", JSON.stringify(err, Object.getOwnPropertyNames(err), 2));
   }
 
   // Handle Mongoose validation errors
