@@ -32,11 +32,12 @@ export const register = asyncHandler(async (req, res) => {
   validatePassword(password);
   validateStringLength(name, "Name", 2, 50);
 
-  // Check if admin registration requires invite code
+  // For admin registration, require invite code (they are creating it)
   if (role === ROLES.ADMIN) {
-    if (!inviteCode || inviteCode !== process.env.ADMIN_INVITE_CODE) {
-      throw new ValidationError("Invalid admin invite code");
+    if (!inviteCode) {
+      throw new ValidationError("Admin invite code is required");
     }
+    validateStringLength(inviteCode, "Invite code", 6, 50);
   }
 
   // Check if user already exists
@@ -45,14 +46,13 @@ export const register = asyncHandler(async (req, res) => {
     throw new ConflictError("User with this email already exists");
   }
 
-  // Create user
+  // Create user with their chosen role and invite code (if admin)
   const user = await User.create({
     name,
     email,
     password,
-    role: role === ROLES.ADMIN && inviteCode === process.env.ADMIN_INVITE_CODE 
-      ? ROLES.ADMIN 
-      : ROLES.USER,
+    role: role === ROLES.ADMIN ? ROLES.ADMIN : ROLES.USER,
+    inviteCode: role === ROLES.ADMIN ? inviteCode : undefined,
   });
 
   // Generate token
@@ -77,18 +77,31 @@ export const register = asyncHandler(async (req, res) => {
  * @access  Public
  */
 export const login = asyncHandler(async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, inviteCode } = req.body;
 
   // Validation
   validateRequired(email, "Email");
   validateRequired(password, "Password");
   validateEmail(email);
 
-  // Find user with password
-  const user = await User.findByCredentials(email, password);
+  // Find user with password and inviteCode (if needed)
+  const user = await User.findOne({ email }).select("+password +inviteCode");
 
   if (!user) {
     throw new AuthenticationError(MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  // Verify password
+  const isPasswordValid = await user.comparePassword(password);
+  if (!isPasswordValid) {
+    throw new AuthenticationError(MESSAGES.INVALID_CREDENTIALS);
+  }
+
+  // If user is admin, verify invite code
+  if (user.role === ROLES.ADMIN) {
+    if (!inviteCode || inviteCode !== user.inviteCode) {
+      throw new AuthenticationError("Invalid admin invite code");
+    }
   }
 
   // Generate token

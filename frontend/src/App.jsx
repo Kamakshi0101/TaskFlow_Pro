@@ -3,6 +3,12 @@ import { useSelector } from 'react-redux'
 import Landing from './pages/Landing'
 import Login from './pages/Login'
 import Register from './pages/Register'
+import UserDashboard from './pages/user/UserDashboard'
+import AdminDashboard from './pages/admin/AdminDashboard'
+import MyTasks from './pages/MyTasks'
+import CreateTask from './pages/CreateTask'
+import TaskDetails from './pages/TaskDetails'
+import Users from './pages/Users'
 
 // Protected Route Component
 function ProtectedRoute({ children }) {
@@ -14,6 +20,12 @@ function ProtectedRoute({ children }) {
 function PublicRoute({ children }) {
   const { user } = useSelector((state) => state.auth)
   return !user ? children : <Navigate to="/dashboard" replace />
+}
+
+// Dashboard Router (routes to admin or user dashboard based on role)
+function DashboardRouter() {
+  const { user } = useSelector((state) => state.auth)
+  return user?.role === 'admin' ? <AdminDashboard /> : <UserDashboard />
 }
 
 function App() {
@@ -45,12 +57,39 @@ function App() {
         path="/dashboard" 
         element={
           <ProtectedRoute>
-            <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-              <div className="text-center">
-                <h1 className="text-4xl font-bold text-gray-800 mb-4">Dashboard Coming Soon</h1>
-                <p className="text-gray-600">You are logged in! 🎉</p>
-              </div>
-            </div>
+            <DashboardRouter />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tasks/my-tasks" 
+        element={
+          <ProtectedRoute>
+            <MyTasks />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tasks/create" 
+        element={
+          <ProtectedRoute>
+            <CreateTask />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/tasks/:id" 
+        element={
+          <ProtectedRoute>
+            <TaskDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/users" 
+        element={
+          <ProtectedRoute>
+            <Users />
           </ProtectedRoute>
         } 
       />

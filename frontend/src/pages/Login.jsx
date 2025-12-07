@@ -11,6 +11,8 @@ const Login = () => {
   const [formData, setFormData] = useState({
     email: "",
     password: "",
+    role: "user",
+    adminInviteCode: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
@@ -29,7 +31,17 @@ const Login = () => {
     setIsLoading(true);
 
     try {
-      const response = await axios.post("/auth/login", formData);
+      const payload = {
+        email: formData.email,
+        password: formData.password,
+      };
+      
+      // Add invite code if admin login
+      if (formData.role === "admin") {
+        payload.inviteCode = formData.adminInviteCode;
+      }
+      
+      const response = await axios.post("/auth/login", payload);
       dispatch(setUser(response.data.data.user));
       toast.success("Login successful!");
       navigate("/dashboard");
@@ -66,6 +78,39 @@ const Login = () => {
         {/* Login Form */}
         <div className="bg-white/60 backdrop-blur-xl rounded-3xl p-8 shadow-xl shadow-indigo-100 border border-white/50">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Role Selection */}
+            <div>
+              <label className="block text-sm font-semibold text-[#0F172A] mb-2">
+                Login As
+              </label>
+              <div className="grid grid-cols-2 gap-4">
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: "user" })}
+                  className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                    formData.role === "user"
+                      ? "border-[#6366F1] bg-indigo-50"
+                      : "border-indigo-100 bg-white hover:border-[#A5B4FC]"
+                  }`}
+                >
+                  <div className="font-semibold text-[#0F172A]">User</div>
+                  <div className="text-xs text-[#64748B] mt-1">Regular account</div>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setFormData({ ...formData, role: "admin" })}
+                  className={`p-4 rounded-2xl border-2 transition-all duration-300 ${
+                    formData.role === "admin"
+                      ? "border-[#F472B6] bg-pink-50"
+                      : "border-indigo-100 bg-white hover:border-[#F472B6]"
+                  }`}
+                >
+                  <div className="font-semibold text-[#0F172A]">Admin</div>
+                  <div className="text-xs text-[#64748B] mt-1">With code</div>
+                </button>
+              </div>
+            </div>
+
             {/* Email Field */}
             <div>
               <label className="block text-sm font-semibold text-[#0F172A] mb-2">
@@ -110,6 +155,27 @@ const Login = () => {
                 </button>
               </div>
             </div>
+
+            {/* Admin Invite Code (conditional) */}
+            {formData.role === "admin" && (
+              <div>
+                <label className="block text-sm font-semibold text-[#0F172A] mb-2">
+                  Admin Invite Code
+                </label>
+                <div className="relative">
+                  <FiLock className="absolute left-4 top-1/2 transform -translate-y-1/2 text-[#64748B]" />
+                  <input
+                    type="text"
+                    name="adminInviteCode"
+                    value={formData.adminInviteCode}
+                    onChange={handleChange}
+                    required
+                    className="w-full pl-12 pr-4 py-3 bg-white border-2 border-pink-100 rounded-2xl focus:border-[#F472B6] focus:outline-none transition-all duration-300 text-[#0F172A]"
+                    placeholder="Enter admin invite code"
+                  />
+                </div>
+              </div>
+            )}
 
             {/* Submit Button */}
             <button

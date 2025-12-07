@@ -33,6 +33,11 @@ const userSchema = new mongoose.Schema(
       },
       default: ROLES.USER,
     },
+    inviteCode: {
+      type: String,
+      trim: true,
+      select: false, // Don't return invite code by default
+    },
     title: {
       type: String,
       trim: true,
