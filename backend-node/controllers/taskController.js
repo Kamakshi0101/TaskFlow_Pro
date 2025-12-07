@@ -611,3 +611,289 @@ export const toggleArchive = asyncHandler(async (req, res) => {
     { task }
   );
 });
+
+/**
+ * @desc    Upload attachments to a task
+ * @route   POST /api/tasks/:id/attachments
+ * @access  Private
+ */
+export const uploadAttachments = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+  validateMongoId(id, "Task ID");
+
+  // Check if files were uploaded
+  if (!req.files || req.files.length === 0) {
+    throw new ValidationError("No files uploaded");
+  }
+
+  const task = await Task.findById(id);
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  // Check permission: only task creator or admin can upload attachments
+  if (
+    task.createdBy.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AuthorizationError(
+      "You are not authorized to upload attachments to this task"
+    );
+  }
+
+  // Process uploaded files - they are already uploaded by cloudinary middleware
+  const newAttachments = req.files.map((file) => ({
+    fileName: file.originalname,
+    fileUrl: file.path, // Cloudinary URL
+    fileType: file.mimetype,
+    fileSize: file.size,
+    uploadedBy: req.user._id,
+  }));
+
+  // Add attachments to task
+  task.attachments.push(...newAttachments);
+  await task.save();
+
+  // Log activity
+  await ActivityLog.logActivity(
+    task._id,
+    req.user._id,
+    "attachment_added",
+    `${req.files.length} attachment(s) added`,
+    { attachmentCount: req.files.length }
+  );
+
+  sendSuccess(
+    res,
+    STATUS_CODES.CREATED,
+    `${req.files.length} attachment(s) uploaded successfully`,
+    { attachments: newAttachments }
+  );
+});
+
+/**
+ * @desc    Delete an attachment from a task
+ * @route   DELETE /api/tasks/:id/attachments/:attachmentId
+ * @access  Private
+ */
+export const deleteAttachment = asyncHandler(async (req, res) => {
+  const { id, attachmentId } = req.params;
+  validateMongoId(id, "Task ID");
+  validateMongoId(attachmentId, "Attachment ID");
+
+  const task = await Task.findById(id);
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const attachment = task.attachments.id(attachmentId);
+  if (!attachment) {
+    throw new NotFoundError("Attachment not found");
+  }
+
+  // Check permission: only uploader, task creator, or admin can delete
+  if (
+    attachment.uploadedBy.toString() !== req.user._id.toString() &&
+    task.createdBy.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AuthorizationError(
+      "You are not authorized to delete this attachment"
+    );
+  }
+
+  const fileName = attachment.fileName;
+
+  // Delete from Cloudinary
+  const cloudinaryService = await import("../services/cloudinaryService.js");
+  try {
+    // Extract public_id from Cloudinary URL
+    const urlParts = attachment.fileUrl.split("/");
+    const publicIdWithExt = urlParts[urlParts.length - 1];
+    const publicId = publicIdWithExt.split(".")[0];
+    await cloudinaryService.deleteFromCloudinary(publicId);
+  } catch (error) {
+    console.error("Error deleting from Cloudinary:", error);
+    // Continue with DB deletion even if Cloudinary deletion fails
+  }
+
+  // Remove attachment from task
+  attachment.deleteOne();
+  await task.save();
+
+  // Log activity
+  await ActivityLog.logActivity(
+    task._id,
+    req.user._id,
+    "attachment_removed",
+    `Attachment "${fileName}" removed`,
+    { fileName }
+  );
+
+  sendSuccess(
+    res,
+    STATUS_CODES.OK,
+    "Attachment deleted successfully",
+    null
+  );
+});
+
+/**
+ * @desc    Edit a comment on a task
+ * @route   PATCH /api/tasks/:id/comments/:commentId
+ * @access  Private
+ */
+export const editComment = asyncHandler(async (req, res) => {
+  const { id, commentId } = req.params;
+  const { text } = req.body;
+
+  validateMongoId(id, "Task ID");
+  validateMongoId(commentId, "Comment ID");
+  validateRequired(text, "Comment text");
+  validateStringLength(text, 1, 1000, "Comment");
+
+  const task = await Task.findById(id).populate("comments.user", "name email");
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const comment = task.comments.id(commentId);
+  if (!comment) {
+    throw new NotFoundError("Comment not found");
+  }
+
+  // Check permission: only comment author or admin can edit
+  if (
+    comment.user._id.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AuthorizationError(
+      "You are not authorized to edit this comment"
+    );
+  }
+
+  const oldText = comment.text;
+  comment.text = text;
+  await task.save();
+
+  // Log activity
+  await ActivityLog.logActivity(
+    task._id,
+    req.user._id,
+    "comment_updated",
+    "Comment edited",
+    { oldText, newText: text }
+  );
+
+  sendSuccess(
+    res,
+    STATUS_CODES.OK,
+    "Comment updated successfully",
+    { comment }
+  );
+});
+
+/**
+ * @desc    Delete a comment from a task
+ * @route   DELETE /api/tasks/:id/comments/:commentId
+ * @access  Private
+ */
+export const deleteComment = asyncHandler(async (req, res) => {
+  const { id, commentId } = req.params;
+
+  validateMongoId(id, "Task ID");
+  validateMongoId(commentId, "Comment ID");
+
+  const task = await Task.findById(id).populate("comments.user", "name email");
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const comment = task.comments.id(commentId);
+  if (!comment) {
+    throw new NotFoundError("Comment not found");
+  }
+
+  // Check permission: only comment author, task creator, or admin can delete
+  if (
+    comment.user._id.toString() !== req.user._id.toString() &&
+    task.createdBy.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AuthorizationError(
+      "You are not authorized to delete this comment"
+    );
+  }
+
+  const commentText = comment.text;
+  comment.deleteOne();
+  await task.save();
+
+  // Log activity
+  await ActivityLog.logActivity(
+    task._id,
+    req.user._id,
+    "comment_removed",
+    "Comment deleted",
+    { commentText }
+  );
+
+  sendSuccess(
+    res,
+    STATUS_CODES.OK,
+    "Comment deleted successfully",
+    null
+  );
+});
+
+/**
+ * @desc    Delete a subtask from a task
+ * @route   DELETE /api/tasks/:id/subtasks/:subtaskId
+ * @access  Private
+ */
+export const deleteSubtask = asyncHandler(async (req, res) => {
+  const { id, subtaskId } = req.params;
+
+  validateMongoId(id, "Task ID");
+  validateMongoId(subtaskId, "Subtask ID");
+
+  const task = await Task.findById(id);
+  if (!task) {
+    throw new NotFoundError("Task not found");
+  }
+
+  const subtask = task.subtasks.id(subtaskId);
+  if (!subtask) {
+    throw new NotFoundError("Subtask not found");
+  }
+
+  // Check permission: only task creator or admin can delete subtasks
+  if (
+    task.createdBy.toString() !== req.user._id.toString() &&
+    req.user.role !== "admin"
+  ) {
+    throw new AuthorizationError(
+      "You are not authorized to delete subtasks from this task"
+    );
+  }
+
+  const subtaskTitle = subtask.title;
+  subtask.deleteOne();
+  await task.save();
+
+  // Log activity
+  await ActivityLog.logActivity(
+    task._id,
+    req.user._id,
+    "subtask_deleted",
+    `Subtask "${subtaskTitle}" deleted`,
+    { subtaskTitle }
+  );
+
+  sendSuccess(
+    res,
+    STATUS_CODES.OK,
+    "Subtask deleted successfully",
+    { task }
+  );
+});

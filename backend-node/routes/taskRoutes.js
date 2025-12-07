@@ -9,14 +9,20 @@ import {
   unassignTask,
   addSubtask,
   toggleSubtask,
+  deleteSubtask,
   addComment,
+  editComment,
+  deleteComment,
   startTimeTracking,
   stopTimeTracking,
   getTaskStatistics,
   getMyTasks,
   toggleArchive,
+  uploadAttachments,
+  deleteAttachment,
 } from "../controllers/taskController.js";
 import { verifyAuth, isAdmin } from "../middleware/auth.js";
+import { uploadMultiple } from "../middleware/upload.js";
 
 const router = express.Router();
 
@@ -112,6 +118,13 @@ router.post("/:id/subtasks", addSubtask);
  */
 router.patch("/:id/subtasks/:subtaskId", toggleSubtask);
 
+/**
+ * @route   DELETE /api/tasks/:id/subtasks/:subtaskId
+ * @desc    Delete subtask from task
+ * @access  Private
+ */
+router.delete("/:id/subtasks/:subtaskId", deleteSubtask);
+
 // ============================================
 // COMMENTS
 // ============================================
@@ -122,6 +135,20 @@ router.patch("/:id/subtasks/:subtaskId", toggleSubtask);
  * @access  Private
  */
 router.post("/:id/comments", addComment);
+
+/**
+ * @route   PATCH /api/tasks/:id/comments/:commentId
+ * @desc    Edit comment on task
+ * @access  Private
+ */
+router.patch("/:id/comments/:commentId", editComment);
+
+/**
+ * @route   DELETE /api/tasks/:id/comments/:commentId
+ * @desc    Delete comment from task
+ * @access  Private
+ */
+router.delete("/:id/comments/:commentId", deleteComment);
 
 // ============================================
 // TIME TRACKING
@@ -151,5 +178,23 @@ router.post("/:id/time/stop", stopTimeTracking);
  * @access  Private
  */
 router.patch("/:id/archive", toggleArchive);
+
+// ============================================
+// FILE ATTACHMENTS
+// ============================================
+
+/**
+ * @route   POST /api/tasks/:id/attachments
+ * @desc    Upload attachments to task
+ * @access  Private
+ */
+router.post("/:id/attachments", uploadMultiple, uploadAttachments);
+
+/**
+ * @route   DELETE /api/tasks/:id/attachments/:attachmentId
+ * @desc    Delete attachment from task
+ * @access  Private
+ */
+router.delete("/:id/attachments/:attachmentId", deleteAttachment);
 
 export default router;

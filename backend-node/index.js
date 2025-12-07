@@ -12,6 +12,8 @@ import { sendSuccess } from "./utils/response.js";
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import activityLogRoutes from "./routes/activityLogRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -79,8 +81,11 @@ app.use("/api/auth", authRoutes);
 // Task routes
 app.use("/api/tasks", taskRoutes);
 
-// User routes (will be added in next step)
-// app.use("/api/users", userRoutes);
+// Analytics routes
+app.use("/api/analytics", analyticsRoutes);
+
+// Activity log routes
+app.use("/api/activities", activityLogRoutes);
 
 // ============================================
 // ERROR HANDLING MIDDLEWARE
