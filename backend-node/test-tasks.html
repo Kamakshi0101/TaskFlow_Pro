@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Task Management API</title>
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            padding: 30px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.2);
+        }
+        h1 { 
+            color: #667eea;
+            margin-bottom: 10px;
+            font-size: 32px;
+        }
+        .subtitle {
+            color: #666;
+            margin-bottom: 30px;
+        }
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .section h2 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 20px;
+            border-bottom: 2px solid #667eea;
+            padding-bottom: 8px;
+        }
+        .btn-group { 
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: all 0.3s;
+            color: white;
+        }
+        .btn:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,0.15); }
+        .btn-primary { background: #667eea; }
+        .btn-success { background: #48bb78; }
+        .btn-warning { background: #ed8936; }
+        .btn-danger { background: #f56565; }
+        .btn-info { background: #4299e1; }
+        .btn-secondary { background: #718096; }
+        
+        #output {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 20px;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            font-size: 13px;
+            max-height: 500px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+            word-wrap: break-word;
+            line-height: 1.5;
+        }
+        .log-time { color: #569cd6; }
+        .log-success { color: #4ec9b0; }
+        .log-error { color: #f48771; }
+        .log-info { color: #dcdcaa; }
+        
+        .credentials {
+            background: #fff3cd;
+            border: 1px solid #ffc107;
+            padding: 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        .credentials h3 { 
+            color: #856404;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        .credentials p {
+            color: #856404;
+            margin: 4px 0;
+            font-size: 14px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 Task Management API Tester</h1>
+        <p class="subtitle">Comprehensive testing for Task Manager endpoints</p>
+
+        <div class="credentials">
+            <h3>📋 Test Instructions:</h3>
+            <p>1. First, login using the Auth section to get authentication cookie</p>
+            <p>2. Then test task operations (create, update, assign, etc.)</p>
+            <p>3. Check the console output for detailed API responses</p>
+        </div>
+
+        <!-- Authentication Section -->
+        <div class="section">
+            <h2>🔐 Authentication</h2>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="testRegister()">Register User</button>
+                <button class="btn btn-success" onclick="testLogin()">Login</button>
+                <button class="btn btn-info" onclick="testGetMe()">Get Profile</button>
+                <button class="btn btn-danger" onclick="testLogout()">Logout</button>
+            </div>
+        </div>
+
+        <!-- Task CRUD Section -->
+        <div class="section">
+            <h2>📝 Task CRUD Operations</h2>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="createTask()">Create Task</button>
+                <button class="btn btn-primary" onclick="getAllTasks()">Get All Tasks</button>
+                <button class="btn btn-info" onclick="getMyTasks()">Get My Tasks</button>
+                <button class="btn btn-warning" onclick="updateTask()">Update Task</button>
+                <button class="btn btn-secondary" onclick="getTaskStats()">Get Statistics</button>
+            </div>
+        </div>
+
+        <!-- Task Management Section -->
+        <div class="section">
+            <h2>⚙️ Task Management</h2>
+            <div class="btn-group">
+                <button class="btn btn-primary" onclick="assignTask()">Assign Task</button>
+                <button class="btn btn-warning" onclick="addSubtask()">Add Subtask</button>
+                <button class="btn btn-success" onclick="toggleSubtask()">Toggle Subtask</button>
+                <button class="btn btn-info" onclick="addComment()">Add Comment</button>
+            </div>
+        </div>
+
+        <!-- Time Tracking Section -->
+        <div class="section">
+            <h2>⏱️ Time Tracking</h2>
+            <div class="btn-group">
+                <button class="btn btn-success" onclick="startTime()">Start Time Tracking</button>
+                <button class="btn btn-danger" onclick="stopTime()">Stop Time Tracking</button>
+            </div>
+        </div>
+
+        <!-- Output Console -->
+        <div class="section">
+            <h2>📊 Console Output</h2>
+            <div id="output">Ready to test... Click a button above to start!</div>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = 'http://localhost:5000/api';
+        const output = document.getElementById('output');
+        
+        // Store test data
+        let testUserId = null;
+        let testTaskId = null;
+        let testSubtaskId = null;
+
+        function log(type, message, data = null) {
+            const timestamp = new Date().toLocaleTimeString();
+            let logClass = 'log-info';
+            let icon = 'ℹ️';
+            
+            if (type === 'success') { logClass = 'log-success'; icon = '✅'; }
+            else if (type === 'error') { logClass = 'log-error'; icon = '❌'; }
+            
+            let text = `<span class="log-time">[${timestamp}]</span> <span class="${logClass}">${icon} ${message}</span>\n`;
+            if (data) {
+                text += `<span class="log-info">${JSON.stringify(data, null, 2)}</span>\n`;
+            }
+            output.innerHTML = text + '\n' + output.innerHTML;
+        }
+
+        async function makeRequest(endpoint, method = 'GET', body = null) {
+            try {
+                const options = {
+                    method,
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' }
+                };
+                if (body) options.body = JSON.stringify(body);
+                
+                const response = await fetch(`${API_URL}${endpoint}`, options);
+                const data = await response.json();
+                
+                if (data.success) {
+                    log('success', `${method} ${endpoint}`, data);
+                    return data;
+                } else {
+                    log('error', `${method} ${endpoint} failed`, data);
+                    return null;
+                }
+            } catch (error) {
+                log('error', `Request failed: ${error.message}`);
+                return null;
+            }
+        }
+
+        // ========== AUTHENTICATION ==========
+        async function testRegister() {
+            const data = await makeRequest('/auth/register', 'POST', {
+                name: 'Test User',
+                email: `test${Date.now()}@example.com`,
+                password: 'Test123'
+            });
+            if (data?.data?.user) testUserId = data.data.user._id;
+        }
+
+        async function testLogin() {
+            const data = await makeRequest('/auth/login', 'POST', {
+                email: 'test@example.com',
+                password: 'Test123'
+            });
+            if (data?.data?.user) testUserId = data.data.user._id;
+        }
+
+        async function testGetMe() {
+            const data = await makeRequest('/auth/me');
+            if (data?.data?.user) testUserId = data.data.user._id;
+        }
+
+        async function testLogout() {
+            await makeRequest('/auth/logout', 'POST');
+        }
+
+        // ========== TASK CRUD ==========
+        async function createTask() {
+            const data = await makeRequest('/tasks', 'POST', {
+                title: `Test Task ${Date.now()}`,
+                description: 'This is a comprehensive test task with all features',
+                priority: 'high',
+                status: 'pending',
+                tags: ['test', 'important'],
+                estimatedTime: 120,
+                dueDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString(),
+                subtasks: [
+                    { title: 'Subtask 1', completed: false },
+                    { title: 'Subtask 2', completed: false }
+                ]
+            });
+            if (data?.data?.task) {
+                testTaskId = data.data.task._id;
+                if (data.data.task.subtasks?.length > 0) {
+                    testSubtaskId = data.data.task.subtasks[0]._id;
+                }
+                log('info', `Task ID saved: ${testTaskId}`);
+            }
+        }
+
+        async function getAllTasks() {
+            await makeRequest('/tasks?page=1&limit=10');
+        }
+
+        async function getMyTasks() {
+            await makeRequest('/tasks/my-tasks');
+        }
+
+        async function updateTask() {
+            if (!testTaskId) {
+                log('error', 'Please create a task first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}`, 'PUT', {
+                title: 'Updated Task Title',
+                status: 'in-progress',
+                priority: 'urgent'
+            });
+        }
+
+        async function getTaskStats() {
+            await makeRequest('/tasks/stats');
+        }
+
+        // ========== TASK MANAGEMENT ==========
+        async function assignTask() {
+            if (!testTaskId || !testUserId) {
+                log('error', 'Please login and create a task first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}/assign`, 'POST', {
+                userIds: [testUserId]
+            });
+        }
+
+        async function addSubtask() {
+            if (!testTaskId) {
+                log('error', 'Please create a task first!');
+                return;
+            }
+            const data = await makeRequest(`/tasks/${testTaskId}/subtasks`, 'POST', {
+                title: `New Subtask ${Date.now()}`
+            });
+            if (data?.data?.task?.subtasks) {
+                const subtasks = data.data.task.subtasks;
+                testSubtaskId = subtasks[subtasks.length - 1]._id;
+            }
+        }
+
+        async function toggleSubtask() {
+            if (!testTaskId || !testSubtaskId) {
+                log('error', 'Please create a task and add a subtask first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}/subtasks/${testSubtaskId}`, 'PATCH');
+        }
+
+        async function addComment() {
+            if (!testTaskId) {
+                log('error', 'Please create a task first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}/comments`, 'POST', {
+                text: 'This is a test comment from the API tester!'
+            });
+        }
+
+        // ========== TIME TRACKING ==========
+        async function startTime() {
+            if (!testTaskId) {
+                log('error', 'Please create a task first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}/time/start`, 'POST', {
+                description: 'Working on test task'
+            });
+        }
+
+        async function stopTime() {
+            if (!testTaskId) {
+                log('error', 'Please create a task first!');
+                return;
+            }
+            await makeRequest(`/tasks/${testTaskId}/time/stop`, 'POST');
+        }
+
+        // Initial message
+        log('info', 'Task Management API Tester loaded successfully!');
+        log('info', 'Click "Register User" or "Login" to start testing');
+    </script>
+</body>
+</html>

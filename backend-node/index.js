@@ -11,6 +11,7 @@ import { sendSuccess } from "./utils/response.js";
 
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
+import taskRoutes from "./routes/taskRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -75,8 +76,8 @@ app.get("/health", (req, res) => {
 // Auth routes
 app.use("/api/auth", authRoutes);
 
-// Task routes (will be added in next step)
-// app.use("/api/tasks", taskRoutes);
+// Task routes
+app.use("/api/tasks", taskRoutes);
 
 // User routes (will be added in next step)
 // app.use("/api/users", userRoutes);
