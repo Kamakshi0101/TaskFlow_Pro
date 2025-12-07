@@ -9,6 +9,9 @@ import { connectDatabase } from "./config/database.js";
 import { globalErrorHandler, notFoundHandler } from "./middleware/errorHandler.js";
 import { sendSuccess } from "./utils/response.js";
 
+// Import routes
+import authRoutes from "./routes/authRoutes.js";
+
 // Load environment variables
 dotenv.config();
 
@@ -66,11 +69,11 @@ app.get("/health", (req, res) => {
 });
 
 // ============================================
-// API ROUTES (to be added later)
+// API ROUTES
 // ============================================
 
-// Auth routes (will be added in next step)
-// app.use("/api/auth", authRoutes);
+// Auth routes
+app.use("/api/auth", authRoutes);
 
 // Task routes (will be added in next step)
 // app.use("/api/tasks", taskRoutes);
