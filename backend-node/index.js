@@ -12,6 +12,9 @@ import { sendSuccess } from "./utils/response.js";
 // Import routes
 import authRoutes from "./routes/authRoutes.js";
 import taskRoutes from "./routes/taskRoutes.js";
+import adminTaskRoutes from "./routes/adminTaskRoutes.js";
+import myTasksRoutes from "./routes/myTasksRoutes.js";
+import userRoutes from "./routes/userRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import activityLogRoutes from "./routes/activityLogRoutes.js";
 
@@ -78,8 +81,17 @@ app.get("/health", (req, res) => {
 // Auth routes
 app.use("/api/auth", authRoutes);
 
-// Task routes
-app.use("/api/tasks", taskRoutes);
+// User routes
+app.use("/api/users", userRoutes);
+
+// Task routes (legacy - kept for backward compatibility)
+// app.use("/api/tasks", taskRoutes); // DISABLED: Using new adminTaskRoutes instead
+
+// Admin task management routes (new per-user assignee system)
+app.use("/api/tasks", adminTaskRoutes);
+
+// User-specific task routes
+app.use("/api/my-tasks", myTasksRoutes);
 
 // Analytics routes
 app.use("/api/analytics", analyticsRoutes);

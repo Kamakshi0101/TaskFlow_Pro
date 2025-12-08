@@ -24,14 +24,15 @@ const Sidebar = () => {
 
   const userMenuItems = [
     { name: "Dashboard", path: "/dashboard", icon: <FiHome /> },
-    { name: "My Tasks", path: "/tasks", icon: <FiCheckSquare /> },
+    { name: "My Tasks", path: "/my-tasks", icon: <FiCheckSquare /> },
     { name: "Analytics", path: "/analytics", icon: <FiBarChart2 /> },
     { name: "Settings", path: "/settings", icon: <FiSettings /> },
   ];
 
   const adminMenuItems = [
     { name: "Dashboard", path: "/dashboard", icon: <FiHome /> },
-    { name: "All Tasks", path: "/tasks", icon: <FiCheckSquare /> },
+    { name: "All Tasks", path: "/admin/all-tasks", icon: <FiCheckSquare /> },
+    { name: "My Tasks", path: "/my-tasks", icon: <FiCheckSquare /> },
     { name: "Users", path: "/users", icon: <FiUsers /> },
     { name: "Analytics", path: "/analytics", icon: <FiBarChart2 /> },
     { name: "Settings", path: "/settings", icon: <FiSettings /> },

@@ -36,7 +36,8 @@ function UserDashboard() {
     try {
       setLoading(true)
       
-      const tasksRes = await axios.get('/tasks/my-tasks')
+      // Fetch user's assigned tasks from new endpoint
+      const tasksRes = await axios.get('/my-tasks')
       const allTasks = tasksRes.data.data.tasks || []
 
       // Calculate stats
@@ -53,8 +54,8 @@ function UserDashboard() {
 
       const weekStart = subDays(today, 7)
       const completedThisWeek = allTasks.filter(t => {
-        if (t.status !== 'completed' || !t.updatedAt) return false
-        return new Date(t.updatedAt) >= weekStart
+        if (t.status !== 'completed' || !t.completedAt) return false
+        return new Date(t.completedAt) >= weekStart
       }).length
 
       setStats({
@@ -66,8 +67,8 @@ function UserDashboard() {
 
       // Today's Progress
       const completedToday = allTasks.filter(t => {
-        if (t.status !== 'completed' || !t.updatedAt) return false
-        return format(new Date(t.updatedAt), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
+        if (t.status !== 'completed' || !t.completedAt) return false
+        return format(new Date(t.completedAt), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
       }).length
       const totalToday = dueToday + completedToday
       const progress = totalToday > 0 ? (completedToday / totalToday) * 100 : 0
@@ -86,7 +87,7 @@ function UserDashboard() {
 
       // Group tasks by status
       setTasks({
-        pending: allTasks.filter(t => t.status === 'todo'),
+        pending: allTasks.filter(t => t.status === 'pending'),
         inProgress: allTasks.filter(t => t.status === 'in-progress'),
         completed: allTasks.filter(t => t.status === 'completed')
       })
@@ -95,8 +96,8 @@ function UserDashboard() {
       const last84Days = Array.from({ length: 84 }, (_, i) => {
         const date = subDays(today, 83 - i)
         const completedOnDay = allTasks.filter(t => {
-          if (!t.updatedAt || t.status !== 'completed') return false
-          return format(new Date(t.updatedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+          if (!t.completedAt || t.status !== 'completed') return false
+          return format(new Date(t.completedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
         }).length
         return {
           date: date.toISOString(),

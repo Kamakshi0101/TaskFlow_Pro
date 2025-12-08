@@ -5,7 +5,8 @@ import Login from './pages/Login'
 import Register from './pages/Register'
 import UserDashboard from './pages/user/UserDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
-import MyTasks from './pages/MyTasks'
+import AllTasks from './pages/admin/AllTasks'
+import MyTasks from './pages/user/MyTasks'
 import CreateTask from './pages/CreateTask'
 import TaskDetails from './pages/TaskDetails'
 import Users from './pages/Users'
@@ -62,7 +63,23 @@ function App() {
         } 
       />
       <Route 
+        path="/admin/all-tasks" 
+        element={
+          <ProtectedRoute>
+            <AllTasks />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
         path="/tasks/my-tasks" 
+        element={
+          <ProtectedRoute>
+            <MyTasks />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/my-tasks" 
         element={
           <ProtectedRoute>
             <MyTasks />

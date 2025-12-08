@@ -99,6 +99,64 @@ const timeLogSchema = new mongoose.Schema({
   },
 });
 
+// Workflow Step Schema (per-user personal workflow)
+const workflowStepSchema = new mongoose.Schema({
+  stepId: {
+    type: String,
+    required: true,
+  },
+  label: {
+    type: String,
+    required: true,
+    trim: true,
+  },
+  done: {
+    type: Boolean,
+    default: false,
+  },
+  order: {
+    type: Number,
+    default: 0,
+  },
+}, { _id: false });
+
+// Assignee Schema (per-user progress and workflow)
+const assigneeSchema = new mongoose.Schema({
+  user: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "User",
+    required: true,
+  },
+  status: {
+    type: String,
+    enum: ["pending", "in-progress", "completed"],
+    default: "pending",
+  },
+  progress: {
+    type: Number,
+    min: 0,
+    max: 100,
+    default: 0,
+  },
+  startedAt: {
+    type: Date,
+    default: null,
+  },
+  completedAt: {
+    type: Date,
+    default: null,
+  },
+  workflow: [workflowStepSchema],
+  timeSpentMinutes: {
+    type: Number,
+    default: 0,
+  },
+  activeTimerStartedAt: {
+    type: Date,
+    default: null,
+  },
+}, { _id: false });
+
 // Main Task Schema
 const taskSchema = new mongoose.Schema(
   {
@@ -117,10 +175,10 @@ const taskSchema = new mongoose.Schema(
     status: {
       type: String,
       enum: {
-        values: Object.values(TASK_STATUS),
+        values: ["pending", "in-progress", "completed", "archived"],
         message: "{VALUE} is not a valid status",
       },
-      default: TASK_STATUS.PENDING,
+      default: "pending",
     },
     priority: {
       type: String,
@@ -130,18 +188,28 @@ const taskSchema = new mongoose.Schema(
       },
       default: TASK_PRIORITY.MEDIUM,
     },
-    // Multi-assignee support
-    assignedTo: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "User",
-      },
-    ],
+    // Per-user assignee system with individual progress and workflows
+    assignees: [assigneeSchema],
     createdBy: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "User",
       required: true,
     },
+    // Tags for categorization
+    tags: [
+      {
+        type: String,
+        trim: true,
+      },
+    ],
+    // Attachments
+    attachments: [
+      {
+        url: String,
+        name: String,
+        type: String,
+      },
+    ],
     // Dates
     dueDate: {
       type: Date,
@@ -155,36 +223,10 @@ const taskSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
-    // Subtasks/Checklist
+    // Subtasks/Checklist (legacy - kept for backward compatibility)
     subtasks: [subtaskSchema],
-    // Attachments
-    attachments: [attachmentSchema],
     // Comments
     comments: [commentSchema],
-    // Time tracking
-    timeLogs: [timeLogSchema],
-    totalTimeSpent: {
-      type: Number, // in minutes
-      default: 0,
-    },
-    estimatedTime: {
-      type: Number, // in minutes
-      default: null,
-    },
-    // Tags for categorization
-    tags: [
-      {
-        type: String,
-        trim: true,
-      },
-    ],
-    // Related links
-    links: [
-      {
-        title: String,
-        url: String,
-      },
-    ],
     // For soft delete
     isArchived: {
       type: Boolean,
@@ -429,18 +471,17 @@ taskSchema.statics.getStatistics = async function () {
 // ============================================
 
 // Pre-save: Update user's task created count
-taskSchema.pre("save", async function (next) {
+taskSchema.pre("save", async function () {
   if (this.isNew) {
     const User = mongoose.model("User");
     await User.findByIdAndUpdate(this.createdBy, {
       $inc: { tasksCreated: 1 },
     });
   }
-  next();
 });
 
 // Pre-save: Auto-complete if all subtasks done
-taskSchema.pre("save", function (next) {
+taskSchema.pre("save", function () {
   if (
     this.subtasks &&
     this.subtasks.length > 0 &&
@@ -451,7 +492,6 @@ taskSchema.pre("save", function (next) {
     // this.status = TASK_STATUS.COMPLETED;
     // this.completedAt = new Date();
   }
-  next();
 });
 
 const Task = mongoose.model("Task", taskSchema);
