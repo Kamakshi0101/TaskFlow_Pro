@@ -737,7 +737,7 @@ const TaskModal = ({ show, onClose, onSubmit, formData, setFormData, users, titl
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3 max-h-48 overflow-y-auto p-3 bg-gray-50 rounded-xl border border-gray-200">
-                {users.map((user) => (
+                {users.filter(user => user.role !== 'admin').map((user) => (
                   <label
                     key={user._id}
                     className="flex items-center gap-3 p-3 bg-white rounded-lg cursor-pointer hover:bg-indigo-50 transition-colors border border-gray-100"

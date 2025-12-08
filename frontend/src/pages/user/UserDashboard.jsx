@@ -5,7 +5,6 @@ import { Link } from 'react-router-dom'
 import DashboardLayout from '../../components/layout/DashboardLayout'
 import ProgressRing from '../../components/ui/ProgressRing'
 import GradientCard from '../../components/ui/GradientCard'
-import HeatmapChart from '../../components/charts/HeatmapChart'
 import axios from '../../utils/axiosInstance'
 import { FiCheckCircle, FiClock, FiAlertCircle, FiAward, FiPlus, FiList, FiCalendar, FiBarChart2, FiChevronRight } from 'react-icons/fi'
 import { subDays, format } from 'date-fns'
@@ -25,18 +24,29 @@ function UserDashboard() {
     inProgress: [],
     completed: []
   })
-  const [heatmapData, setHeatmapData] = useState([])
   const [motivationalText, setMotivationalText] = useState('')
 
   useEffect(() => {
     fetchDashboardData()
+
+    // Refetch when page becomes visible (user switches back to tab/page)
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        fetchDashboardData()
+      }
+    }
+
+    document.addEventListener('visibilitychange', handleVisibilityChange)
+
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange)
+    }
   }, [])
 
   const fetchDashboardData = async () => {
     try {
       setLoading(true)
       
-      // Fetch user's assigned tasks from new endpoint
       const tasksRes = await axios.get('/my-tasks')
       const allTasks = tasksRes.data.data.tasks || []
 
@@ -54,8 +64,11 @@ function UserDashboard() {
 
       const weekStart = subDays(today, 7)
       const completedThisWeek = allTasks.filter(t => {
-        if (t.status !== 'completed' || !t.completedAt) return false
-        return new Date(t.completedAt) >= weekStart
+        if (t.status !== 'completed') return false
+        // Find user's assignee data for completedAt timestamp
+        const assignee = t.assignees?.find(a => a.user?._id || a.user)
+        if (!assignee?.completedAt) return false
+        return new Date(assignee.completedAt) >= weekStart
       }).length
 
       setStats({
@@ -65,24 +78,23 @@ function UserDashboard() {
         completedThisWeek
       })
 
-      // Today's Progress
-      const completedToday = allTasks.filter(t => {
-        if (t.status !== 'completed' || !t.completedAt) return false
-        return format(new Date(t.completedAt), 'yyyy-MM-dd') === format(today, 'yyyy-MM-dd')
-      }).length
-      const totalToday = dueToday + completedToday
-      const progress = totalToday > 0 ? (completedToday / totalToday) * 100 : 0
+      // Overall Progress (all assigned tasks)
+      const completedCount = allTasks.filter(t => t.status === 'completed').length
+      const totalCount = allTasks.length
+      const progress = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0
       setTodayProgress(progress)
 
       // Motivational Text
-      if (progress >= 80) {
-        setMotivationalText("🎉 Outstanding! You're crushing your goals!")
+      if (progress === 100) {
+        setMotivationalText("🎉 Outstanding! You've completed all your tasks!")
+      } else if (progress >= 80) {
+        setMotivationalText("💪 Amazing! You're almost done!")
       } else if (progress >= 50) {
-        setMotivationalText("💪 Great job! You're ahead of your goal.")
+        setMotivationalText("🚀 Great progress! Keep going!")
       } else if (progress > 0) {
-        setMotivationalText("🚀 Keep going! You're making progress.")
+        setMotivationalText("👍 You're making progress. Keep it up!")
       } else {
-        setMotivationalText("☕ Time to get started on today's tasks!")
+        setMotivationalText("☕ Time to get started on your tasks!")
       }
 
       // Group tasks by status
@@ -91,20 +103,6 @@ function UserDashboard() {
         inProgress: allTasks.filter(t => t.status === 'in-progress'),
         completed: allTasks.filter(t => t.status === 'completed')
       })
-
-      // Heatmap Data (Last 84 days)
-      const last84Days = Array.from({ length: 84 }, (_, i) => {
-        const date = subDays(today, 83 - i)
-        const completedOnDay = allTasks.filter(t => {
-          if (!t.completedAt || t.status !== 'completed') return false
-          return format(new Date(t.completedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-        }).length
-        return {
-          date: date.toISOString(),
-          count: completedOnDay
-        }
-      })
-      setHeatmapData(last84Days)
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
@@ -353,17 +351,6 @@ function UserDashboard() {
           </motion.div>
         </div>
 
-        {/* Personal Heatmap */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.9 }}
-          className="bg-white rounded-3xl p-6 shadow-lg shadow-indigo-100 border border-indigo-50"
-        >
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Your Contribution Heatmap</h3>
-          <HeatmapChart data={heatmapData} weeks={12} />
-        </motion.div>
-
         {/* Quick Actions Panel */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
@@ -381,7 +368,7 @@ function UserDashboard() {
           </Link>
 
           <Link
-            to="/tasks/my-tasks"
+            to="/my-tasks"
             className="group bg-gradient-to-br from-blue-500 to-cyan-500 rounded-2xl p-6 shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-105 text-white"
           >
             <FiList className="text-3xl mb-3" />

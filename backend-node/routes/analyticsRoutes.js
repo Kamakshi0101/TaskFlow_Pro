@@ -10,12 +10,48 @@ import {
   getActivityStats,
   getTasksByAssignee,
 } from "../controllers/analyticsController.js";
+import {
+  getUserOverview,
+  getUserProgress30Days,
+  getUserHeatmap,
+  getUserSummary,
+} from "../controllers/userAnalyticsController.js";
+import {
+  getAdminOverview,
+  getTeamProgress,
+  getPriorityDistribution as getAdminPriorityDistribution,
+  getTeamHeatmap,
+  getLeaderboard,
+  getBottlenecks,
+} from "../controllers/adminAnalyticsController.js";
 import { verifyAuth, isAdmin } from "../middleware/auth.js";
 
 const router = express.Router();
 
 // All analytics routes require authentication
 router.use(verifyAuth);
+
+// ============================================
+// USER ANALYTICS ROUTES
+// ============================================
+router.get("/user/overview", getUserOverview);
+router.get("/user/progress-30", getUserProgress30Days);
+router.get("/user/heatmap", getUserHeatmap);
+router.get("/user/summary", getUserSummary);
+
+// ============================================
+// ADMIN ANALYTICS ROUTES
+// ============================================
+router.get("/admin/overview", isAdmin, getAdminOverview);
+router.get("/admin/team-progress", isAdmin, getTeamProgress);
+router.get("/admin/priority-distribution", isAdmin, getAdminPriorityDistribution);
+router.get("/admin/heatmap", isAdmin, getTeamHeatmap);
+router.get("/admin/leaderboard", isAdmin, getLeaderboard);
+router.get("/admin/bottlenecks", isAdmin, getBottlenecks);
+
+// ============================================
+// LEGACY ANALYTICS ROUTES (kept for compatibility)
+// ============================================
 
 /**
  * @route   GET /api/analytics/dashboard

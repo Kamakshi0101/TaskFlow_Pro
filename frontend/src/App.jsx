@@ -7,8 +7,9 @@ import UserDashboard from './pages/user/UserDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AllTasks from './pages/admin/AllTasks'
 import MyTasks from './pages/user/MyTasks'
-import CreateTask from './pages/CreateTask'
-import TaskDetails from './pages/TaskDetails'
+import TaskDetails from './pages/user/TaskDetails'
+import UserAnalytics from './pages/user/UserAnalytics'
+import AdminAnalytics from './pages/admin/AdminAnalytics'
 import Users from './pages/Users'
 
 // Protected Route Component
@@ -63,22 +64,6 @@ function App() {
         } 
       />
       <Route 
-        path="/admin/all-tasks" 
-        element={
-          <ProtectedRoute>
-            <AllTasks />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/tasks/my-tasks" 
-        element={
-          <ProtectedRoute>
-            <MyTasks />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
         path="/my-tasks" 
         element={
           <ProtectedRoute>
@@ -87,18 +72,34 @@ function App() {
         } 
       />
       <Route 
-        path="/tasks/create" 
-        element={
-          <ProtectedRoute>
-            <CreateTask />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
         path="/tasks/:id" 
         element={
           <ProtectedRoute>
             <TaskDetails />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/analytics" 
+        element={
+          <ProtectedRoute>
+            <UserAnalytics />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/all-tasks" 
+        element={
+          <ProtectedRoute>
+            <AllTasks />
+          </ProtectedRoute>
+        } 
+      />
+      <Route 
+        path="/admin/analytics" 
+        element={
+          <ProtectedRoute>
+            <AdminAnalytics />
           </ProtectedRoute>
         } 
       />

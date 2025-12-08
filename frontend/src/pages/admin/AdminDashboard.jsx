@@ -5,7 +5,6 @@ import KpiCard from '../../components/ui/KpiCard'
 import CustomPieChart from '../../components/charts/CustomPieChart'
 import CustomBarChart from '../../components/charts/CustomBarChart'
 import CustomLineChart from '../../components/charts/CustomLineChart'
-import HeatmapChart from '../../components/charts/HeatmapChart'
 import ActivityItem from '../../components/ui/ActivityItem'
 import UserTable from '../../components/ui/UserTable'
 import axios from '../../utils/axiosInstance'
@@ -25,9 +24,7 @@ function AdminDashboard() {
   const [taskDistribution, setTaskDistribution] = useState([])
   const [priorityData, setPriorityData] = useState([])
   const [productivityData, setProductivityData] = useState([])
-  const [heatmapData, setHeatmapData] = useState([])
   const [recentActivity, setRecentActivity] = useState([])
-  const [teamPerformance, setTeamPerformance] = useState([])
 
   useEffect(() => {
     fetchDashboardData()
@@ -47,15 +44,24 @@ function AdminDashboard() {
       const users = usersRes.data.data.users || []
       const analytics = analyticsRes.data.data || {}
 
-      // Calculate stats
-      const completed = tasks.filter(t => t.status === 'completed').length
-      const pending = tasks.filter(t => t.status === 'todo').length
-      const overdue = tasks.filter(t => new Date(t.dueDate) < new Date() && t.status !== 'completed').length
+      // Calculate stats (count assignee-level completions)
+      const totalAssignees = tasks.reduce((sum, t) => sum + (t.assignees?.length || 0), 0)
+      const completedAssignees = tasks.reduce((sum, t) => {
+        return sum + (t.assignees?.filter(a => a.status === 'completed').length || 0)
+      }, 0)
+      const pendingAssignees = tasks.reduce((sum, t) => {
+        return sum + (t.assignees?.filter(a => a.status === 'pending').length || 0)
+      }, 0)
+      const overdue = tasks.filter(t => {
+        if (!t.dueDate) return false
+        const hasIncompleteAssignees = t.assignees?.some(a => a.status !== 'completed')
+        return new Date(t.dueDate) < new Date() && hasIncompleteAssignees
+      }).length
 
       setStats({
-        totalTasks: tasks.length,
-        completedTasks: completed,
-        pendingTasks: pending,
+        totalTasks: totalAssignees,
+        completedTasks: completedAssignees,
+        pendingTasks: pendingAssignees,
         overdueTasks: overdue,
         totalUsers: users.length,
         activeUsersToday: users.filter(u => {
@@ -66,11 +72,14 @@ function AdminDashboard() {
         }).length
       })
 
-      // Task Distribution (Pie Chart)
+      // Task Distribution (Pie Chart) - Count assignee statuses
+      const inProgressAssignees = tasks.reduce((sum, t) => {
+        return sum + (t.assignees?.filter(a => a.status === 'in-progress').length || 0)
+      }, 0)
       const distribution = [
-        { name: 'Pending', value: tasks.filter(t => t.status === 'todo').length },
-        { name: 'In Progress', value: tasks.filter(t => t.status === 'in-progress').length },
-        { name: 'Completed', value: completed }
+        { name: 'Pending', value: pendingAssignees },
+        { name: 'In Progress', value: inProgressAssignees },
+        { name: 'Completed', value: completedAssignees }
       ].filter(d => d.value > 0)
       setTaskDistribution(distribution)
 
@@ -82,33 +91,22 @@ function AdminDashboard() {
       ]
       setPriorityData(priority)
 
-      // Productivity Line Chart (Last 7 days)
+      // Productivity Line Chart (Last 7 days) - Count assignee completions
       const last7Days = Array.from({ length: 7 }, (_, i) => {
         const date = subDays(new Date(), 6 - i)
-        const completedOnDay = tasks.filter(t => {
-          if (!t.updatedAt || t.status !== 'completed') return false
-          return format(new Date(t.updatedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-        }).length
+        const completedOnDay = tasks.reduce((sum, task) => {
+          const completions = task.assignees?.filter(assignee => {
+            if (assignee.status !== 'completed' || !assignee.completedAt) return false
+            return format(new Date(assignee.completedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
+          }).length || 0
+          return sum + completions
+        }, 0)
         return {
           name: format(date, 'EEE'),
           value: completedOnDay
         }
       })
       setProductivityData(last7Days)
-
-      // Heatmap Data (Last 84 days)
-      const last84Days = Array.from({ length: 84 }, (_, i) => {
-        const date = subDays(new Date(), 83 - i)
-        const completedOnDay = tasks.filter(t => {
-          if (!t.updatedAt || t.status !== 'completed') return false
-          return format(new Date(t.updatedAt), 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd')
-        }).length
-        return {
-          date: date.toISOString(),
-          count: completedOnDay
-        }
-      })
-      setHeatmapData(last84Days)
 
       // Recent Activity
       const activities = tasks.slice(0, 10).map(task => ({
@@ -120,14 +118,6 @@ function AdminDashboard() {
         avatar: task.createdBy?.name?.charAt(0).toUpperCase()
       }))
       setRecentActivity(activities)
-
-      // Team Performance
-      const userPerformance = users.map(user => ({
-        ...user,
-        completedTasks: tasks.filter(t => t.assignedTo?._id === user._id && t.status === 'completed').length,
-        productivityScore: Math.min(100, tasks.filter(t => t.assignedTo?._id === user._id && t.status === 'completed').length * 10)
-      }))
-      setTeamPerformance(userPerformance)
 
     } catch (error) {
       console.error('Failed to fetch dashboard data:', error)
@@ -269,17 +259,6 @@ function AdminDashboard() {
           </div>
         </motion.div>
 
-        {/* Heatmap Contribution Calendar */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-white rounded-3xl p-6 shadow-lg shadow-indigo-100 border border-indigo-50"
-        >
-          <h3 className="text-lg font-bold text-gray-800 mb-6">Contribution Heatmap</h3>
-          <HeatmapChart data={heatmapData} weeks={12} />
-        </motion.div>
-
         {/* Recent Activity & Team Performance */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Recent Activity Feed */}
@@ -329,16 +308,6 @@ function AdminDashboard() {
             </div>
           </motion.div>
         </div>
-
-        {/* Team Performance Table */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.6 }}
-        >
-          <h3 className="text-2xl font-bold text-gray-800 mb-6">Team Performance</h3>
-          <UserTable users={teamPerformance} />
-        </motion.div>
       </div>
     </DashboardLayout>
   )

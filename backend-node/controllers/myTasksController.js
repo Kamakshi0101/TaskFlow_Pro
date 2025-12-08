@@ -61,8 +61,21 @@ export const getMyTasks = asyncHandler(async (req, res) => {
     Task.countDocuments(query),
   ]);
 
+  // Transform tasks to include user-specific status and progress at top level
+  const transformedTasks = tasks.map((task) => {
+    const taskObj = task.toObject();
+    const userAssignee = task.assignees.find((a) => a.user._id.toString() === userId);
+    
+    return {
+      ...taskObj,
+      // Add user-specific fields at top level for easy access
+      status: userAssignee?.status || "pending",
+      progress: userAssignee?.progress || 0,
+    };
+  });
+
   sendSuccess(res, STATUS_CODES.OK, "Tasks retrieved successfully", {
-    tasks,
+    tasks: transformedTasks,
     pagination: {
       total,
       page: parseInt(page),

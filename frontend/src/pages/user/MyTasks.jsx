@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { FiClock, FiTag, FiCheckCircle, FiCircle, FiPlayCircle } from "react-icons/fi";
+import { useNavigate } from "react-router-dom";
+import { FiClock, FiTag, FiCheckCircle, FiCircle, FiPlayCircle, FiEye } from "react-icons/fi";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import axios from "../../utils/axiosInstance";
 import { format } from "date-fns";
@@ -8,7 +9,8 @@ import { format } from "date-fns";
 const MyTasks = () => {
   const [tasks, setTasks] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [filter, setFilter] = useState("all"); // all, pending, in-progress, completed
+  const [filter, setFilter] = useState("all");
+  const navigate = useNavigate();
 
   useEffect(() => {
     fetchMyTasks();
@@ -46,23 +48,14 @@ const MyTasks = () => {
     return colors[priority] || colors.medium;
   };
 
-  const getStatusColor = (status) => {
-    const colors = {
-      pending: "text-gray-600 bg-gray-50 border-gray-200",
-      "in-progress": "text-indigo-600 bg-indigo-50 border-indigo-200",
-      completed: "text-green-600 bg-green-50 border-green-200",
-    };
-    return colors[status] || colors.pending;
-  };
-
   const getStatusIcon = (status) => {
     switch (status) {
       case "completed":
-        return <FiCheckCircle className="text-green-600" />;
+        return <FiCheckCircle className="text-green-600" size={20} />;
       case "in-progress":
-        return <FiPlayCircle className="text-indigo-600" />;
+        return <FiPlayCircle className="text-indigo-600" size={20} />;
       default:
-        return <FiCircle className="text-gray-400" />;
+        return <FiCircle className="text-gray-400" size={20} />;
     }
   };
 
@@ -80,19 +73,17 @@ const MyTasks = () => {
 
   return (
     <DashboardLayout>
-      <div className="p-8 space-y-6">
+      <div className="space-y-6">
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">My Tasks</h1>
-          <p className="text-gray-500 mt-1">
-            Manage your assigned tasks and track progress
-          </p>
+          <p className="text-gray-600 mt-1">Manage your assigned tasks and workflows</p>
         </div>
 
-        {/* Status Filters */}
+        {/* Filters */}
         <div className="flex gap-3 flex-wrap">
           {[
-            { key: "all", label: "All Tasks" },
+            { key: "all", label: "All" },
             { key: "pending", label: "Pending" },
             { key: "in-progress", label: "In Progress" },
             { key: "completed", label: "Completed" },
@@ -146,7 +137,7 @@ const MyTasks = () => {
                     <h3 className="font-semibold text-gray-900 text-lg leading-snug flex-1">
                       {task.title}
                     </h3>
-                    <div className="flex-shrink-0">
+                    <div className="shrink-0">
                       {getStatusIcon(task.status)}
                     </div>
                   </div>
@@ -204,15 +195,15 @@ const MyTasks = () => {
                       </div>
                       <div className="w-full bg-gray-200 rounded-full h-2">
                         <div
-                          className="bg-gradient-to-r from-indigo-600 to-purple-600 h-2 rounded-full transition-all"
+                          className="bg-linear-to-r from-indigo-600 to-purple-600 h-2 rounded-full transition-all"
                           style={{ width: `${task.progress}%` }}
                         ></div>
                       </div>
                     </div>
                   )}
 
-                  {/* Status Actions */}
-                  <div className="pt-2 border-t border-gray-100">
+                  {/* Actions */}
+                  <div className="pt-2 border-t border-gray-100 space-y-2">
                     <label className="block text-xs font-semibold text-gray-600 mb-2">
                       Update Status
                     </label>
@@ -227,6 +218,15 @@ const MyTasks = () => {
                       <option value="in-progress">In Progress</option>
                       <option value="completed">Completed</option>
                     </select>
+                    
+                    {/* View Details Button */}
+                    <button
+                      onClick={() => navigate(`/tasks/${task._id}`)}
+                      className="w-full px-3 py-2 bg-white border-2 border-indigo-600 text-indigo-600 rounded-lg text-sm font-medium hover:bg-indigo-50 transition-all flex items-center justify-center gap-2"
+                    >
+                      <FiEye size={16} />
+                      View Details
+                    </button>
                   </div>
                 </div>
               </motion.div>
