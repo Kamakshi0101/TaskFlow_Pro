@@ -8,7 +8,7 @@ import CustomLineChart from '../../components/charts/CustomLineChart'
 import ActivityItem from '../../components/ui/ActivityItem'
 import UserTable from '../../components/ui/UserTable'
 import axios from '../../utils/axiosInstance'
-import { FiCheckCircle, FiClock, FiAlertCircle, FiUsers, FiActivity, FiTrendingUp } from 'react-icons/fi'
+import { FiCheckCircle, FiClock, FiAlertCircle, FiUsers, FiActivity, FiTrendingUp, FiDownload, FiFileText } from 'react-icons/fi'
 import { subDays, format } from 'date-fns'
 
 function AdminDashboard() {
@@ -126,6 +126,54 @@ function AdminDashboard() {
     }
   }
 
+  const handleExportPDF = async () => {
+    try {
+      // Call the report API endpoint (no params = all tasks)
+      const reportResponse = await axios.get('/reports/tasks/pdf', {
+        responseType: 'blob' // Important for binary data
+      })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([reportResponse.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `TaskFlowPro-Report-${format(new Date(), 'yyyy-MM-dd')}.pdf`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      
+      alert('PDF report generated successfully!')
+    } catch (error) {
+      console.error('Failed to export PDF:', error)
+      alert('Failed to generate PDF report. Please try again.')
+    }
+  }
+
+  const handleExportExcel = async () => {
+    try {
+      // Call the Excel report API endpoint (no params = all tasks)
+      const reportResponse = await axios.get('/reports/tasks/excel', {
+        responseType: 'blob' // Important for binary data
+      })
+      
+      // Create download link
+      const url = window.URL.createObjectURL(new Blob([reportResponse.data]))
+      const link = document.createElement('a')
+      link.href = url
+      link.setAttribute('download', `TaskFlowPro-Report-${format(new Date(), 'yyyy-MM-dd')}.xlsx`)
+      document.body.appendChild(link)
+      link.click()
+      link.remove()
+      window.URL.revokeObjectURL(url)
+      
+      alert('Excel report generated successfully!')
+    } catch (error) {
+      console.error('Failed to export Excel:', error)
+      alert('Failed to generate Excel report. Please try again.')
+    }
+  }
+
   if (loading) {
     return (
       <DashboardLayout>
@@ -143,15 +191,42 @@ function AdminDashboard() {
   return (
     <DashboardLayout>
       <div className="max-w-[1600px] mx-auto space-y-8">
-        {/* Header */}
+        {/* Header with Export Buttons */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
+          className="flex justify-between items-start"
         >
-          <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-2">
-            Admin Dashboard
-          </h1>
-          <p className="text-gray-600">Complete overview of your workspace performance</p>
+          <div>
+            <h1 className="text-4xl font-bold bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-500 bg-clip-text text-transparent mb-2">
+              Admin Dashboard
+            </h1>
+            <p className="text-gray-600">Complete overview of your workspace performance</p>
+          </div>
+          
+          {/* Export Buttons */}
+          <div className="flex gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportPDF}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiFileText />
+              Export PDF
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={handleExportExcel}
+              disabled={loading}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              <FiDownload />
+              Export Excel
+            </motion.button>
+          </div>
         </motion.div>
 
         {/* KPI Cards */}

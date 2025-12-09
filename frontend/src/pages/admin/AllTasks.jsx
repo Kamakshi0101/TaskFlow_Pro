@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FiPlus, FiSearch, FiFilter, FiGrid, FiList, 
-  FiEdit2, FiTrash2, FiClock, FiUser, FiTag 
+  FiEdit2, FiTrash2, FiClock, FiUser, FiTag, FiFileText, FiDownload 
 } from "react-icons/fi";
 import DashboardLayout from "../../components/layout/DashboardLayout";
 import axios from "../../utils/axiosInstance";
@@ -163,6 +163,58 @@ const AllTasks = () => {
     return colors[status] || colors.pending;
   };
 
+  const handleExportPDF = async () => {
+    try {
+      const response = await axios.get('/reports/tasks/pdf', {
+        params: {
+          status: filters.status !== 'all' ? filters.status : undefined,
+          priority: filters.priority !== 'all' ? filters.priority : undefined,
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `TaskFlowPro-Tasks-${format(new Date(), 'yyyy-MM-dd')}.pdf`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      alert('PDF exported successfully!');
+    } catch (error) {
+      console.error('Failed to export PDF:', error);
+      alert('Failed to export PDF. Please try again.');
+    }
+  };
+
+  const handleExportExcel = async () => {
+    try {
+      const response = await axios.get('/reports/tasks/excel', {
+        params: {
+          status: filters.status !== 'all' ? filters.status : undefined,
+          priority: filters.priority !== 'all' ? filters.priority : undefined,
+        },
+        responseType: 'blob'
+      });
+      
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `TaskFlowPro-Tasks-${format(new Date(), 'yyyy-MM-dd')}.xlsx`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      window.URL.revokeObjectURL(url);
+      
+      alert('Excel exported successfully!');
+    } catch (error) {
+      console.error('Failed to export Excel:', error);
+      alert('Failed to export Excel. Please try again.');
+    }
+  };
+
   return (
     <DashboardLayout>
       <div className="p-8 space-y-6">
@@ -174,14 +226,36 @@ const AllTasks = () => {
               Manage and assign tasks to team members
             </p>
           </div>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setShowCreateModal(true)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-shadow"
-          >
-            <FiPlus /> Create Task
-          </motion.button>
+          <div className="flex gap-3">
+            {/* Export Buttons */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExportPDF}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-red-500 to-pink-500 text-white rounded-lg hover:shadow-lg transition-all"
+            >
+              <FiFileText size={18} />
+              PDF
+            </motion.button>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={handleExportExcel}
+              className="flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-green-500 to-emerald-500 text-white rounded-lg hover:shadow-lg transition-all"
+            >
+              <FiDownload size={18} />
+              Excel
+            </motion.button>
+            {/* Create Task Button */}
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              onClick={() => setShowCreateModal(true)}
+              className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-xl hover:shadow-lg transition-shadow"
+            >
+              <FiPlus /> Create Task
+            </motion.button>
+          </div>
         </div>
 
         {/* Filters and Search */}

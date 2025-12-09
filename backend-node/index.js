@@ -17,6 +17,7 @@ import myTasksRoutes from "./routes/myTasksRoutes.js";
 import userRoutes from "./routes/userRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import activityLogRoutes from "./routes/activityLogRoutes.js";
+import reportRoutes from "./routes/reportRoutes.js";
 
 // Load environment variables
 dotenv.config();
@@ -98,6 +99,9 @@ app.use("/api/analytics", analyticsRoutes);
 
 // Activity log routes
 app.use("/api/activities", activityLogRoutes);
+
+// Report generation routes (calls Java microservice)
+app.use("/api/reports", reportRoutes);
 
 // ============================================
 // ERROR HANDLING MIDDLEWARE
