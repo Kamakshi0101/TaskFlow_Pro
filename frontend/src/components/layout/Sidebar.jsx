@@ -35,7 +35,6 @@ const Sidebar = () => {
     { name: "All Tasks", path: "/admin/all-tasks", icon: <FiCheckSquare /> },
     { name: "Users", path: "/users", icon: <FiUsers /> },
     { name: "Analytics", path: "/admin/analytics", icon: <FiBarChart2 /> },
-    { name: "Reports", path: "/admin/reports", icon: <FiFileText /> },
     { name: "Settings", path: "/settings", icon: <FiSettings /> },
   ];
 

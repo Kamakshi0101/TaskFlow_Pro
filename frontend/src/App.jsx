@@ -6,7 +6,6 @@ import Register from './pages/Register'
 import UserDashboard from './pages/user/UserDashboard'
 import AdminDashboard from './pages/admin/AdminDashboard'
 import AllTasks from './pages/admin/AllTasks'
-import Reports from './pages/admin/Reports'
 import MyTasks from './pages/user/MyTasks'
 import TaskDetails from './pages/user/TaskDetails'
 import UserAnalytics from './pages/user/UserAnalytics'
@@ -101,14 +100,6 @@ function App() {
         element={
           <ProtectedRoute>
             <AdminAnalytics />
-          </ProtectedRoute>
-        } 
-      />
-      <Route 
-        path="/admin/reports" 
-        element={
-          <ProtectedRoute>
-            <Reports />
           </ProtectedRoute>
         } 
       />

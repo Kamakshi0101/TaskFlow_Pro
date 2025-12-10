@@ -3,7 +3,7 @@ import User from '../models/User.js';
 import { asyncHandler } from '../utils/errorHandler.js';
 import { sendSuccess } from '../utils/response.js';
 import { STATUS_CODES } from '../constants/index.js';
-import { startOfDay, subDays, format, differenceInDays } from 'date-fns';
+import { startOfDay, subDays, format, differenceInDays, differenceInHours, differenceInMinutes } from 'date-fns';
 
 /**
  * @desc    Get admin analytics overview
@@ -29,8 +29,9 @@ export const getAdminOverview = asyncHandler(async (req, res) => {
         if (assignee.completedAt) {
           // Use startedAt if available, otherwise use task createdAt
           const startTime = assignee.startedAt || task.createdAt;
-          const timeDiff = differenceInDays(new Date(assignee.completedAt), new Date(startTime));
-          totalCompletionTime += Math.max(timeDiff, 0);
+          const timeInMinutes = differenceInMinutes(new Date(assignee.completedAt), new Date(startTime));
+          const timeInDays = timeInMinutes / (24 * 60);
+          totalCompletionTime += Math.max(timeInDays, 0);
           completedCount++;
         }
       } else {
@@ -166,9 +167,11 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
         if (assignee.status === 'completed') {
           userStats[userId].tasksCompleted++;
 
-          if (assignee.startedAt && assignee.completedAt) {
-            const timeDiff = differenceInDays(new Date(assignee.completedAt), new Date(assignee.startedAt));
-            userStats[userId].totalCompletionTime += timeDiff;
+          if (assignee.completedAt) {
+            const startTime = assignee.startedAt || task.createdAt;
+            const timeInMinutes = differenceInMinutes(new Date(assignee.completedAt), new Date(startTime));
+            const timeInDays = timeInMinutes / (24 * 60);
+            userStats[userId].totalCompletionTime += Math.max(timeInDays, 0);
             userStats[userId].completedCount++;
           }
         }

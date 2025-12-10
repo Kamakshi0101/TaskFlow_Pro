@@ -465,13 +465,23 @@ const TaskTable = ({ tasks, onEdit, onDelete, getPriorityColor, getStatusColor }
                   </div>
                 </td>
                 <td className="px-6 py-4">
-                  <span
-                    className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
-                      task.status
-                    )}`}
-                  >
-                    {task.status}
-                  </span>
+                  <div className="flex flex-col gap-1">
+                    {task.assignees && task.assignees.length > 0 ? (
+                      task.assignees.map((assignee, idx) => (
+                        <span
+                          key={idx}
+                          className={`inline-flex items-center px-3 py-1 rounded-full text-xs font-medium border ${getStatusColor(
+                            assignee.status || 'pending'
+                          )}`}
+                          title={assignee.user?.name || 'User'}
+                        >
+                          {assignee.status || 'pending'}
+                        </span>
+                      ))
+                    ) : (
+                      <span className="text-xs text-gray-400">No assignees</span>
+                    )}
+                  </div>
                 </td>
                 <td className="px-6 py-4">
                   <span
