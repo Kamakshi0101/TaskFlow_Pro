@@ -222,6 +222,9 @@ export const updateTask = asyncHandler(async (req, res) => {
     
     if (status === TASK_STATUS.COMPLETED) {
       task.completedAt = new Date();
+    } else if (status !== TASK_STATUS.COMPLETED) {
+      // Clear completedAt if moving away from completed status
+      task.completedAt = null;
     }
   }
 

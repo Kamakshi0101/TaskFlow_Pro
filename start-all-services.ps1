@@ -23,25 +23,8 @@ try {
     }
 }
 
-# Start Java Service in new window
-Write-Host "`nStep 2: Starting Java Report Service (Port 8085)..." -ForegroundColor Yellow
-$javaScriptPath = Join-Path $PSScriptRoot "start-java-service.ps1"
-Start-Process powershell -ArgumentList "-NoExit", "-File", "`"$javaScriptPath`""
-Write-Host "   Waiting 15 seconds for Java service to start..." -ForegroundColor Gray
-Start-Sleep -Seconds 15
-
-# Verify Java service
-Write-Host "   Verifying Java service..." -ForegroundColor Gray
-try {
-    $javaCheck = Invoke-WebRequest -Uri "http://localhost:8085/api/report/health" -TimeoutSec 5 -ErrorAction Stop
-    Write-Host "   Java service started successfully" -ForegroundColor Green
-} catch {
-    Write-Host "   Warning: Java service may still be starting" -ForegroundColor Yellow
-    Write-Host "   Check the Java service window for status" -ForegroundColor Yellow
-}
-
 # Start Node Backend in new window
-Write-Host "`nStep 3: Starting Node.js Backend (Port 5000)..." -ForegroundColor Yellow
+Write-Host "`nStep 2: Starting Node.js Backend (Port 5000)..." -ForegroundColor Yellow
 $backendPath = Join-Path $PSScriptRoot "backend-node"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd `"$backendPath`"; npm start"
 Write-Host "   Waiting 10 seconds for Node backend to start..." -ForegroundColor Gray
@@ -58,7 +41,7 @@ try {
 }
 
 # Start React Frontend in new window
-Write-Host "`nStep 4: Starting React Frontend (Port 5173)..." -ForegroundColor Yellow
+Write-Host "`nStep 3: Starting React Frontend (Port 5173)..." -ForegroundColor Yellow
 $frontendPath = Join-Path $PSScriptRoot "frontend"
 Start-Process powershell -ArgumentList "-NoExit", "-Command", "cd `"$frontendPath`"; npm run dev"
 Write-Host "   Waiting 8 seconds for React dev server to start..." -ForegroundColor Gray
@@ -73,8 +56,6 @@ Write-Host "  Frontend:  " -NoNewline -ForegroundColor Gray
 Write-Host "http://localhost:5173" -ForegroundColor Cyan
 Write-Host "  Backend:   " -NoNewline -ForegroundColor Gray
 Write-Host "http://localhost:5000" -ForegroundColor Cyan
-Write-Host "  Java API:  " -NoNewline -ForegroundColor Gray
-Write-Host "http://localhost:8085" -ForegroundColor Cyan
 Write-Host "  MongoDB:   " -NoNewline -ForegroundColor Gray
 Write-Host "mongodb://localhost:27017" -ForegroundColor Cyan
 

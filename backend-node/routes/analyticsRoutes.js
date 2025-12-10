@@ -4,7 +4,6 @@ import {
   getTaskDistribution,
   getPriorityDistribution,
   getUserPerformance,
-  getActivityHeatmap,
   getTasksByDateRange,
   getTimeTrackingSummary,
   getActivityStats,
@@ -13,14 +12,12 @@ import {
 import {
   getUserOverview,
   getUserProgress30Days,
-  getUserHeatmap,
   getUserSummary,
 } from "../controllers/userAnalyticsController.js";
 import {
   getAdminOverview,
   getTeamProgress,
   getPriorityDistribution as getAdminPriorityDistribution,
-  getTeamHeatmap,
   getLeaderboard,
   getBottlenecks,
 } from "../controllers/adminAnalyticsController.js";
@@ -36,7 +33,6 @@ router.use(verifyAuth);
 // ============================================
 router.get("/user/overview", getUserOverview);
 router.get("/user/progress-30", getUserProgress30Days);
-router.get("/user/heatmap", getUserHeatmap);
 router.get("/user/summary", getUserSummary);
 
 // ============================================
@@ -45,7 +41,6 @@ router.get("/user/summary", getUserSummary);
 router.get("/admin/overview", isAdmin, getAdminOverview);
 router.get("/admin/team-progress", isAdmin, getTeamProgress);
 router.get("/admin/priority-distribution", isAdmin, getAdminPriorityDistribution);
-router.get("/admin/heatmap", isAdmin, getTeamHeatmap);
 router.get("/admin/leaderboard", isAdmin, getLeaderboard);
 router.get("/admin/bottlenecks", isAdmin, getBottlenecks);
 
@@ -80,13 +75,6 @@ router.get("/priority-distribution", getPriorityDistribution);
  * @access  Private/Admin
  */
 router.get("/user-performance", isAdmin, getUserPerformance);
-
-/**
- * @route   GET /api/analytics/heatmap
- * @desc    Get GitHub-style activity heatmap data
- * @access  Private
- */
-router.get("/heatmap", getActivityHeatmap);
 
 /**
  * @route   GET /api/analytics/tasks-by-date

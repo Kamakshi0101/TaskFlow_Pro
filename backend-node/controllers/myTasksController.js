@@ -174,14 +174,26 @@ export const updateMyTaskStatus = asyncHandler(async (req, res) => {
   // Update user's status
   task.assignees[assigneeIndex].status = status;
 
-  // Update timestamps
-  if (status === "in-progress" && !task.assignees[assigneeIndex].startedAt) {
-    task.assignees[assigneeIndex].startedAt = new Date();
-  }
-
-  if (status === "completed") {
+  // Update timestamps based on status
+  if (status === "in-progress") {
+    // Set startedAt if not already set
+    if (!task.assignees[assigneeIndex].startedAt) {
+      task.assignees[assigneeIndex].startedAt = new Date();
+    }
+    // Clear completedAt when moving back to in-progress
+    task.assignees[assigneeIndex].completedAt = null;
+  } else if (status === "completed") {
+    // Set completedAt and ensure startedAt exists
+    if (!task.assignees[assigneeIndex].startedAt) {
+      task.assignees[assigneeIndex].startedAt = new Date();
+    }
     task.assignees[assigneeIndex].completedAt = new Date();
     task.assignees[assigneeIndex].progress = 100;
+  } else if (status === "pending") {
+    // Clear timestamps when moving to pending
+    task.assignees[assigneeIndex].startedAt = null;
+    task.assignees[assigneeIndex].completedAt = null;
+    task.assignees[assigneeIndex].progress = 0;
   }
 
   await task.save();

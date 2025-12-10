@@ -88,9 +88,11 @@ export const addWorkflowStep = asyncHandler(async (req, res) => {
 
   task.assignees[assigneeIndex].progress = progress;
 
-  // Set startedAt if this is the first step and it wasn't set
+  // Set startedAt and status when first step is added
   if (!task.assignees[assigneeIndex].startedAt) {
     task.assignees[assigneeIndex].startedAt = new Date();
+  }
+  if (task.assignees[assigneeIndex].status === 'pending') {
     task.assignees[assigneeIndex].status = 'in-progress';
   }
 
@@ -153,13 +155,17 @@ export const toggleWorkflowStep = asyncHandler(async (req, res) => {
   if (progress === 100) {
     task.assignees[assigneeIndex].status = 'completed';
     task.assignees[assigneeIndex].completedAt = new Date();
-  } else if (progress > 0 && task.assignees[assigneeIndex].status === 'pending') {
+  } else if (progress > 0 && progress < 100) {
     task.assignees[assigneeIndex].status = 'in-progress';
+    // Set startedAt if not already set
     if (!task.assignees[assigneeIndex].startedAt) {
       task.assignees[assigneeIndex].startedAt = new Date();
     }
-  } else if (progress > 0 && progress < 100) {
-    task.assignees[assigneeIndex].status = 'in-progress';
+    // Clear completedAt if moving from completed to in-progress
+    task.assignees[assigneeIndex].completedAt = null;
+  } else if (progress === 0) {
+    task.assignees[assigneeIndex].status = 'pending';
+    task.assignees[assigneeIndex].completedAt = null;
   }
 
   await task.save();

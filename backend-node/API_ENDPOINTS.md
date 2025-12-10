@@ -304,12 +304,6 @@ GET /api/analytics/priority-distribution
 GET /api/analytics/user-performance?userId=optional
 ```
 
-### Get Activity Heatmap (GitHub-style contribution graph)
-```
-GET /api/analytics/heatmap?userId=optional&year=2024
-```
-**Returns:** Daily activity counts for contribution visualization
-
 ### Get Tasks by Date Range
 ```
 GET /api/analytics/tasks-by-date?startDate=2024-01-01&endDate=2024-12-31
@@ -477,7 +471,6 @@ GET /api/activities/action-breakdown?startDate=2024-01-01&endDate=2024-12-31
 ✅ File uploads to Cloudinary (5MB limit, 5 files max)
 ✅ Archive/unarchive tasks
 ✅ Comprehensive analytics dashboard
-✅ GitHub-style activity heatmap
 ✅ Complete audit trail with activity logs
 ✅ User management (Admin)
 ✅ Error handling and validation

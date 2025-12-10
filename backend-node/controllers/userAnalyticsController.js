@@ -90,39 +90,6 @@ export const getUserProgress30Days = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get user's heatmap data (for calendar view)
- * @route   GET /api/analytics/user/heatmap
- * @access  Private
- */
-export const getUserHeatmap = asyncHandler(async (req, res) => {
-  const userId = req.user.id;
-
-  // Get all completed tasks
-  const tasks = await Task.find({
-    'assignees.user': userId,
-    'assignees.status': 'completed',
-    isArchived: false,
-  });
-
-  const heatmapData = {};
-
-  tasks.forEach((task) => {
-    const assignee = task.assignees.find((a) => a.user.toString() === userId);
-    if (assignee && assignee.completedAt) {
-      const dateKey = format(startOfDay(new Date(assignee.completedAt)), 'yyyy-MM-dd');
-      heatmapData[dateKey] = (heatmapData[dateKey] || 0) + 1;
-    }
-  });
-
-  const formattedData = Object.keys(heatmapData).map((date) => ({
-    date,
-    count: heatmapData[date],
-  }));
-
-  sendSuccess(res, STATUS_CODES.OK, 'Heatmap data retrieved', formattedData);
-});
-
-/**
  * @desc    Get user's weekly summary with insights
  * @route   GET /api/analytics/user/summary
  * @access  Private

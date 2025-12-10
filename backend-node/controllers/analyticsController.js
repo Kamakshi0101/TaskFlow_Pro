@@ -152,62 +152,6 @@ export const getUserPerformance = asyncHandler(async (req, res) => {
 });
 
 /**
- * @desc    Get activity heatmap data (GitHub-style)
- * @route   GET /api/analytics/heatmap
- * @access  Private
- */
-export const getActivityHeatmap = asyncHandler(async (req, res) => {
-  const { userId, days = 365 } = req.query;
-
-  // Calculate date range
-  const endDate = new Date();
-  const startDate = new Date();
-  startDate.setDate(startDate.getDate() - parseInt(days));
-
-  // Build query
-  const query = {
-    completedAt: {
-      $gte: startDate,
-      $lte: endDate,
-    },
-    status: TASK_STATUS.COMPLETED,
-    isArchived: false,
-  };
-
-  // If not admin or specific user requested
-  if (req.user.role !== "admin" || userId) {
-    query.assignedTo = userId || req.user._id;
-  }
-
-  // Aggregate tasks by date
-  const heatmapData = await Task.aggregate([
-    { $match: query },
-    {
-      $group: {
-        _id: {
-          $dateToString: { format: "%Y-%m-%d", date: "$completedAt" },
-        },
-        count: { $sum: 1 },
-      },
-    },
-    {
-      $project: {
-        date: "$_id",
-        count: 1,
-        _id: 0,
-      },
-    },
-    { $sort: { date: 1 } },
-  ]);
-
-  sendSuccess(res, STATUS_CODES.OK, "Activity heatmap fetched successfully", {
-    heatmap: heatmapData,
-    startDate,
-    endDate,
-  });
-});
-
-/**
  * @desc    Get tasks by date range
  * @route   GET /api/analytics/tasks-by-date
  * @access  Private

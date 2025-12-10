@@ -26,9 +26,11 @@ export const getAdminOverview = asyncHandler(async (req, res) => {
     task.assignees.forEach((assignee) => {
       if (assignee.status === 'completed') {
         completedTasks++;
-        if (assignee.startedAt && assignee.completedAt) {
-          const timeDiff = differenceInDays(new Date(assignee.completedAt), new Date(assignee.startedAt));
-          totalCompletionTime += timeDiff;
+        if (assignee.completedAt) {
+          // Use startedAt if available, otherwise use task createdAt
+          const startTime = assignee.startedAt || task.createdAt;
+          const timeDiff = differenceInDays(new Date(assignee.completedAt), new Date(startTime));
+          totalCompletionTime += Math.max(timeDiff, 0);
           completedCount++;
         }
       } else {
@@ -124,33 +126,6 @@ export const getPriorityDistribution = asyncHandler(async (req, res) => {
   }));
 
   sendSuccess(res, STATUS_CODES.OK, 'Priority distribution retrieved', formattedData);
-});
-
-/**
- * @desc    Get team heatmap data
- * @route   GET /api/analytics/admin/heatmap
- * @access  Private (Admin only)
- */
-export const getTeamHeatmap = asyncHandler(async (req, res) => {
-  const tasks = await Task.find({ isArchived: false });
-
-  const heatmapData = {};
-
-  tasks.forEach((task) => {
-    task.assignees.forEach((assignee) => {
-      if (assignee.status === 'completed' && assignee.completedAt) {
-        const dateKey = format(startOfDay(new Date(assignee.completedAt)), 'yyyy-MM-dd');
-        heatmapData[dateKey] = (heatmapData[dateKey] || 0) + 1;
-      }
-    });
-  });
-
-  const formattedData = Object.keys(heatmapData).map((date) => ({
-    date,
-    count: heatmapData[date],
-  }));
-
-  sendSuccess(res, STATUS_CODES.OK, 'Team heatmap data retrieved', formattedData);
 });
 
 /**
