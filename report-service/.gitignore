@@ -41,3 +41,4 @@ Thumbs.db
 
 # Application specific
 application-local.properties
+!report-service/jar files/*.jar
